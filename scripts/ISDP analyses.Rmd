@@ -1,0 +1,538 @@
+---
+title: "ISDP_2024"
+author: "Anaya, B"
+date: "2024-05-24"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+# Installing packages 
+list.of.packages <- c("dplyr", "plyr","stats","ggplot2", "psych", "nlme","tinytex","lattice", "mitml", "lme4","interactions", "jtools", "cowplot", "tidyr", "readr", "mice", "broom", "miceadds", "broom.mixed", "pander", "ggsignif")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages) 
+# Loading packages
+lapply(list.of.packages, require, character.only = TRUE)
+```
+
+# ISDP 2024 Abstract Analyses
+
+### Loading the necessary datasets
+```{r datasets}
+path="~/Documents/K00/eLAbe/" #my computer
+setwd(path)
+
+demo <- read.csv("Demo_Data.csv", header = T)
+demo <- demo%>%
+  dplyr::select(modid, screen_delivery_ga_weeks:child_sex, child_age_y1_assessment)%>%
+  dplyr::rename(id = modid)
+
+ibq <- read.csv("Anaya_02_20_2024_ibqr.csv", header=T)
+ibq <- ibq %>%
+  dplyr::filter(redcap_event_name == "birth_interim_2_arm_1")%>%
+  select(-redcap_event_name)%>%
+  dplyr::rename(id = modid)
+
+pren_stress <- read.csv("Stress_preg.csv", header = T)
+colnames(pren_stress) <- c("id", "dep_1", "dep_2", "dep_3", "dep_4", "stress_1", "stress_2", "stress_3", "stress_4")
+
+ses <- read.csv("social_disadvantage.csv", header = T)
+ses <- ses%>%
+  dplyr::select(MODID, disadv_prenatal)%>%
+  dplyr::rename(id = MODID)
+
+exc <- read.csv("exclusion.csv", header = T)
+exc <- exc%>%
+  dplyr::select(modid, combined_exclusion_initial_analyses, irb_exclusion)%>%
+  dplyr::rename(id = modid)%>%
+  dplyr::mutate(exc_all = if_else(combined_exclusion_initial_analyses == 1 | irb_exclusion == 1, 1, 0))%>%
+  dplyr::select(id, exc_all)
+
+QC <- read.csv("HAPPE_pipelineQC_Y1.csv", header = T)
+QC$id <- substr(QC$Row, 1,7)
+
+QC <- QC%>%
+  dplyr::select(id, r.alldata.post.pre.waveleting)%>%
+  dplyr::mutate(exc = if_else(r.alldata.post.pre.waveleting < .15, 1, 0))
+```
+
+### Demographic info
+```{r}
+table(demo$child_sex)
+```
+
+### Loading EEG datasets
+```{r EEG}
+path="~/Documents/K00/eLAbe/Delta_Beta_Processed/" #my computer
+setwd(path)
+odd_sync <- read.csv("OddSynchrony.csv", header = T)
+std_sync <- read.csv("StdrSynchrony.csv", header = T)
+aft_sync <- read.csv("AfterSynchrony.csv", header = T)
+
+all_sync <- rbind(odd_sync, std_sync)
+all_sync <- rbind(all_sync, aft_sync)
+
+all_sync <- merge(all_sync, QC, by="id", all = T)
+all_sync_exc <- all_sync%>%
+  dplyr::filter(exc == 0)%>%
+  dplyr::select(-r.alldata.post.pre.waveleting, -exc)
+```
+
+
+### Merging all datasets and excluding participants
+```{r}
+df_all <- merge(demo, ses, by="id", all = T)
+df_all <- merge(df_all, exc, by="id", all = T)
+df_all <- df_all %>%
+  dplyr::filter(exc_all == 0)%>%
+  dplyr::select(-exc_all)
+
+df_all_eeg <- merge(df_all, all_sync_exc, by="id", all.y = T)
+
+df_all_eeg <- merge(df_all_eeg, exc, by="id", all.x = T)
+df_all_eeg <- df_all_eeg%>%
+  dplyr::filter(exc_all == 0)%>%
+  dplyr::select(-exc_all)
+```
+
+
+### Looking at trajectories of prenatal stress
+```{r}
+# reshaping data to long
+pren_long <- reshape(pren_stress,
+                     idvar = "id", 
+                     varying = 2:9,
+                     timevar = "time",
+                     direction = "long", 
+                     sep = "_")
+
+pren_long$time <- pren_long$time - 1
+```
+
+### Plot of sample-level change in distribution across time
+```{r}
+#Density distribution by day
+ggplot(data=pren_long, aes(x=dep)) + 
+  geom_density(aes(group=factor(time), colour=factor(time), fill=factor(time)), alpha=0.3)
+
+ggplot(data=pren_long, aes(x=stress)) + 
+  geom_density(aes(group=factor(time), colour=factor(time), fill=factor(time)), alpha=0.3)
+```
+
+### Plot of individual-level trajectories
+```{r}
+pren_long %>%
+  ggplot(aes(x=factor(time), y =stress))+
+  geom_line(aes(x=factor(time), y =stress, group=id, colour = as.factor(id)))+
+  geom_point(aes(x=factor(time), y =stress, group=id, colour = as.factor(id)))+
+  geom_boxplot(aes(fill=factor(time)), alpha=.50, notch = TRUE,  outlier.size = -1, color="black",lwd=.75, na.rm = T)+
+  #geom_signif(comparisons = list(c("0","1")), 
+             #map_signif_level=c("*"=0.01))+
+  scale_fill_viridis_d(option = "A", end = .80)+
+  scale_color_viridis_d(option = "A")+
+  scale_x_discrete(name="Pregnancy Trimester", labels=c("T1", "T2", "T3", "Birth"))+
+  theme_classic()+
+  theme(legend.position = "none")+
+  ylab("Perceived Stress")
+
+
+pren_long %>%
+  ggplot(aes(x=factor(time), y =dep))+
+  geom_line(aes(x=factor(time), y =dep, group=id, colour = as.factor(id)), alpha=.65)+
+  geom_point(aes(x=factor(time), y =dep, group=id, colour = as.factor(id)), alpha=.65)+
+  geom_boxplot(aes(fill=factor(time)), alpha=.50, notch = TRUE,  outlier.size = -1, color="black",lwd=.75, na.rm = T)+
+  #geom_smooth(aes(group = 1), method = "lm", color="black", lwd=1, linetype = "dashed")+
+  scale_fill_viridis_d(option = "B", end = .81)+
+  scale_color_viridis_d(option = "B", end = .81)+
+  scale_x_discrete(name="Pregnancy Trimester", labels=c("T1", "T2", "T3", "Birth"))+
+  theme_classic()+
+  theme(legend.position = "none")+
+  ylab("Mother Depression (EPD Scores)")+
+  theme(axis.title = element_text(size = 14),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
+```
+
+
+
+### Linear growth models
+```{r}
+library(lmerTest)
+
+pss <- lmer(stress ~ 1 + time +
+              (1 + time| id), 
+            data = pren_long)
+summary(pss)
+
+# excluding NAs outside the model
+pren_long_nao <- pren_long%>%
+  dplyr::filter(!if_all(c(dep), is.na))
+
+dep <- lmer(dep ~ 1 + time +
+              (1 + time| id), 
+            data = pren_long_nao)
+summary(dep)
+```
+
+
+### Quadratic growth model for depression
+```{r}
+pren_long_nao$timesq <- pren_long_nao$time^2
+
+depQ <- nlme(dep ~ g0 + g1*time + g2*timesq,
+                    fixed = g0 + g1 + g2 ~ 1,
+                    random = g0 + g1 + g2 ~ 1,
+                    group = ~id,
+                    start = c(g0=4.9, g1=0.2, g2=-0.1),
+                    data = pren_long_nao,
+                    na.action = "na.exclude")
+summary(depQ)
+
+# comparing models
+
+logLik(dep)
+logLik(depQ)
+
+## lambda
+-2 * (-3929.369 - -3908.141)
+## p-value from a chi-square
+pchisq(42.456, df = 4, lower.tail = FALSE)
+```
+
+### Plotting the predicted trajectories
+
+```{r}
+VarCorr(depQ)
+
+```
+```{r}
+#obtaining predicted scores for individuals
+pren_long_nao$pred_quad <- predict(depQ)
+
+#obtaining predicted scores for prototype
+pren_long_nao$proto_quad <- predict(depQ, level=0)
+
+#plotting predicted trajectories
+# intraindividual change trajetories
+ggplot(data = pren_long_nao, aes(x = time, y = pred_quad)) +
+  #geom_point(color="black") + 
+  geom_line(aes(x = time, y = pred_quad, group = id), color="#c6880a", alpha=.35) +
+  geom_line(aes(x = time, y = proto_quad), color="#96695e", size=2) +
+  scale_x_continuous(name="Pregnancy Trimester", labels=c("T1", "T2", "T3", "Birth"))+
+  ylab("Quadratic Model Estimates")+
+  theme_classic()+
+  theme(axis.title = element_text(size = 14),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
+```
+
+### Exporting Linear and Quadratic Random Slopes
+```{r}
+DepSlopes <- depQ$coefficients$random$id
+DepSlopes <- as.data.frame(DepSlopes)
+DepSlopes <- mutate(DepSlopes, id = rownames(DepSlopes))
+colnames(DepSlopes)<- c("Dep_int", "Dep_Slope", "Dep_QSlope", "id") 
+
+
+pren_stress <- merge(pren_stress, DepSlopes, by="id", all = T)
+pren_stress <- pren_stress%>%
+  dplyr::mutate(stress_ave = rowMeans(cbind(stress_1, stress_2, stress_3, stress_4), na.rm=T))%>%
+  dplyr::select(id, Dep_int, Dep_Slope, Dep_QSlope, stress_ave)
+```
+
+### Results
+Perceived stress did not significantly change over time. 
+On the other hand, linear and quadratic models indicated significant change in depression from T1 to birth. Specifcally, depression significantly decreased over time 
+We average across perceived stress and extracted average intercept and slope for depression 
+
+
+### Delta-Beta coupling scores across task conditions
+```{r synchrony scores, echo=FALSE}
+# visualizing data
+
+all_sync_exc %>%
+  dplyr::filter(trial == "Std")%>%
+  dplyr::select(2:4)%>%
+  gather() %>% 
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+    geom_histogram(bins = 20, fill="#95f20c", color="white")
+
+all_sync_exc %>%
+  dplyr::filter(trial == "Odd")%>%
+  dplyr::select(2:4)%>%
+  gather() %>% 
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+    geom_histogram(bins = 20, fill="#05b58c", color="white")
+
+all_sync_exc %>%
+  dplyr::filter(trial == "After")%>%
+  dplyr::select(2:4)%>%
+  gather() %>% 
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+    geom_histogram(bins = 20, fill="#05b40c", color="white")
+  
+
+all_sync_exc <- na.omit(all_sync_exc)
+describeBy(all_sync_exc, group = all_sync_exc$trial)
+
+ggplot(all_sync_exc, aes(x = trial, y = FrontalSync, fill = trial)) +
+  geom_violin(alpha=0.25, position = position_dodge(width = .75),linewidth=.75,color="black") + 
+  geom_boxplot(notch = TRUE,  outlier.size = -1, color="black",lwd=.75, alpha = 0.7)+
+  geom_signif(comparisons = list(c("Std","After"), c("Std","Odd")), 
+             map_signif_level=c("*"=0.2))+
+  scale_x_discrete(limits=c("Std", "After", "Odd"), labels=c("Standard", "After Standard", "Odd"))+
+  scale_fill_viridis_d( option = "C", end = .75)+
+  annotate(geom="text", x=3, y=.38, label="(B = -0.024, p = .004)",
+              color="black")+
+  labs(x="Task Triak", y = "Frontal Delta-Beta Coupling")+
+  geom_point(position = position_jitter(seed = 1, width = 0.2), shape = 1, alpha=.65) +
+  #stat_summary(fun = "mean",
+               #color="black") +
+  theme_classic()+
+  theme(legend.position = "none")
+
+ggplot(all_sync_exc, aes(x = trial, y = CentralSync, fill = trial)) +
+  geom_violin(alpha=0.30, position = position_dodge(width = .75),linewidth=.75,color="black") + 
+  geom_boxplot(notch = TRUE,  outlier.size = -1, color="black",lwd=.75, alpha = 0.7)+
+  geom_signif(comparisons = list(c("Std","After"), c("Std","Odd")), 
+             map_signif_level=c("*"=0.5))+
+  scale_x_discrete(limits=c("Std", "After", "Odd"), labels=c("Standard", "After Standard", "Odd"))+
+  scale_fill_viridis_d( option = "C", end = .85)+
+  annotate(geom="text", x=3, y=.57, label="(B = -0.015, p = .025)",
+              color="black")+
+  labs(x="Task Trial", y = "Central Delta-Beta Coupling")+
+  geom_point(position = position_jitter(seed = 1, width = 0.2), shape = 1, alpha=.65) +
+  #stat_summary(fun = "mean",
+               #color="black") +
+  theme_classic()+
+  theme(legend.position = "none")
+
+ggplot(all_sync_exc, aes(x = trial, y = ParietalSync, fill = trial)) +
+  geom_violin(alpha=0.30, position = position_dodge(width = .75),linewidth=.75,color="black") + 
+  geom_boxplot(notch = TRUE,  outlier.size = -1, color="black",lwd=.75, alpha = 0.7)+
+  scale_x_discrete(limits=c("Std", "After", "Odd"), labels=c("Standard", "After Standard", "Odd"))+
+  scale_fill_viridis_d( option = "C", end=.95)+
+  labs(x="Task Trial", y = "Parietal Delta-Beta Coupling")+
+  geom_point(position = position_jitter(seed = 1, width = 0.2), shape = 1, alpha=.65) +
+  #stat_summary(fun = "mean",
+               #color="black") +
+  theme_classic()+
+  theme(legend.position = "none")
+```
+
+## Testing differences by trial
+
+```{r}
+all_sync_exc$trial <- as.factor(all_sync_exc$trial)
+
+FrontalT <- lmer(FrontalSync ~ 1 + relevel(trial, ref = "Odd") +
+              (1 | id), 
+            data = all_sync_exc)
+summary(FrontalT)
+
+CentralT <- lmer(CentralSync ~ 1 + relevel(trial, ref = "Odd") +
+              (1 | id), 
+            data = all_sync_exc)
+summary(CentralT)
+
+PerT <- lmer(ParietalSync ~ 1 + relevel(trial, ref = "Odd") +
+              (1 | id), 
+            data = all_sync_exc)
+summary(PerT)
+```
+### Results
+Odd trials significantly reduced delta-beta coupling at Frontal and Central Regions but not Parietal
+
+
+
+### Merging demographics and prenatal to examine associations with delta-beta coupling
+```{r}
+df_all_eeg <- merge(df_all_eeg, DepSlopes, by = "id")
+df_all_eeg$birthweight <- (df_all_eeg$child_birthweight*0.00220462)
+
+df_all_eeg$birthweight.c <- scale(df_all_eeg$birthweight, center = T, scale = F)
+df_all_eeg$ga.c <-  scale(df_all_eeg$screen_delivery_ga_weeks, center = T, scale = F)
+df_all_eeg$child_sex <-  as.factor(df_all_eeg$child_sex)
+df_all_eeg$trial <-  as.factor(df_all_eeg$trial)
+df_all_eeg$trial <-  relevel(df_all_eeg$trial, ref = "Odd")
+
+
+FrontalCOV <- lmer(FrontalSync ~ 1 + child_age_y1_assessment + child_sex + ga.c + trial + 
+              (1 | id), 
+            data = df_all_eeg)
+summary(FrontalCOV)
+
+CentralCOV <- lmer(CentralSync ~ 1 + child_age_y1_assessment + child_sex + ga.c + trial +
+              (1 | id), 
+            data = df_all_eeg)
+summary(CentralCOV)
+
+PerCOV <- lmer(ParietalSync ~ 1 + child_age_y1_assessment + child_sex +  ga.c + trial +
+              (1 | id), 
+            data = df_all_eeg)
+summary(PerCOV)
+```
+### Results:
+Reduction in Odd trials remains after covariates
+
+
+
+### Merging ibq negative to examine whether these differences relate to temperament
+```{r}
+df_all_eeg <- merge(df_all_eeg, ibq, by = "id", all.x = T)
+df_all_eeg$ibqr_neg.c <- scale(df_all_eeg$ibqr_neg, center = T, scale = F)
+
+FrontalTEMP <- lmer(FrontalSync ~ 1 + 
+                      # covariates: remove because not significant
+                      #child_age_y1_assessment + child_sex + ga.c + disadv_prenatal + 
+                      ibqr_neg.c + 
+                      trial + 
+                      trial*ibqr_neg.c +
+              (1 | id), 
+            data = df_all_eeg)
+summary(FrontalTEMP)
+
+FrontalTEMP1 <- lmer(FrontalSync ~ 1 + ibqr_neg + trial + 
+                      trial*ibqr_neg +
+              (1 | id), 
+            data = df_all_eeg)
+summary(FrontalTEMP1)
+
+CentralTEMP <- lmer(CentralSync ~ 1 + 
+                      # covariates: remove because not significant
+                      #child_age_y1_assessment + child_sex + ga.c + disadv_prenatal + ibqr_neg.c + 
+                      trial +
+                      trial*ibqr_neg.c +
+              (1 | id), 
+            data = df_all_eeg)
+summary(CentralTEMP)
+
+PerTEMP <- lmer(ParietalSync ~ 1 + 
+                  # covariates: remove because not significant
+                  #child_age_y1_assessment + child_sex +  ga.c + disadv_prenatal + 
+                  ibqr_neg.c + trial +
+                  trial*ibqr_neg.c +
+              (1 | id), 
+            data = df_all_eeg)
+summary(PerTEMP)
+```
+### Results:
+
+Frontal: Higher negative affect predicted lower delta-beta coupling across all trials, and significantly interacted with trials to predict greater reduction in Odd trials
+
+Central: No association
+
+Parietal: No association
+
+## Visualizing significant trial differences by temperament
+
+```{r , echo=FALSE}
+Fmodel <- interactions::interact_plot(FrontalTEMP1, pred = ibqr_neg, modx = trial, plot.points = T, 
+                                      legend.main = "Trial Type",
+                                      colors = c("black", "#f5ab0c", "#8a2030"))
+
+#interactions::sim_slopes(FrontalTEMP1, pred = ibqr_neg, modx = trial, plot.points = T, color="viridis")
+#, colors = "viridis", modx.labels =  c("Odd", "Standard", "After Standard"), legend.main = "Trial Type")
+
+Fmodel+
+  ylab("Frontal Delta-Beta Coupling")+
+  xlab("IBQ Negative Affect 8 Months")+
+  #scale_color_viridis_d("Trial Type", labels=c("Odd", "Standard", "After Standard"), option="B", end = .81)+
+  theme_minimal()+
+  theme(axis.title = element_text(size = 14),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
+  
+```
+
+### Effect of depression trajectories 
+Knowing the delta-beta coupling at 12M is associated with negative affect at 8M, we explore correlations between prenatal depression and negative affect
+
+```{r}
+library(GGally)
+
+suppressWarnings(
+  print(
+df_all_eeg%>%
+  select(id, ibqr_neg, Dep_int, Dep_Slope, Dep_QSlope)%>%
+  unique()%>%
+  ggpairs(., 
+        columns = 2:5, 
+        upper = list(continuous = wrap("cor", size = 5)),
+        lower = list(continuous = "smooth"))
+  )
+)
+```
+### Results:
+Depression intercept and IBE negative affect are significantly correlated (r = .291)
+
+### Models including depression after accounting for infant negative affect 
+```{r}
+FrontalDep <- lmer(FrontalSync ~ 1 + 
+                     # child_age_y1_assessment +  child_sex + ga.c + disadv_prenatal +
+                     ibqr_neg.c +
+                     #Dep_int + Dep_Slope + Dep_QSlope + 
+                     trial +
+                     trial*ibqr_neg.c +
+                     trial*Dep_int + trial*Dep_Slope + trial*Dep_QSlope + 
+                     trial*ibqr_neg.c*Dep_int + trial*ibqr_neg.c*Dep_Slope + trial*ibqr_neg.c*Dep_QSlope +
+              (1 | id), 
+            data = df_all_eeg)
+summary(FrontalDep)
+
+CentralDep <- lmer(CentralSync ~ 1 + 
+                     #child_age_y1_assessment +  child_sex + ga.c + disadv_prenatal + 
+                     Dep_int + Dep_Slope + Dep_QSlope + 
+                     trial +
+                     trial*Dep_int + trial*Dep_Slope + trial*Dep_QSlope + 
+              (1 | id), 
+            data = df_all_eeg)
+summary(CentralDep)
+
+ParietalDep <- lmer(ParietalSync ~ 1 + 
+                      #child_age_y1_assessment +  child_sex + ga.c + disadv_prenatal + 
+                      Dep_int + Dep_Slope + Dep_QSlope + 
+                      trial +
+                     trial*Dep_int + trial*Dep_Slope + trial*Dep_QSlope +
+              (1 | id), 
+            data = df_all_eeg)
+summary(ParietalDep)
+```
+### Results: 
+Depression Intercept significantly predicted weaker Central coupling during odd trials. Depression Quadratic intercept marginally predicted weaker coupling as well.
+
+
+
+### Effect at the Central region
+```{r , echo=FALSE}
+Cmodel <- interactions::interact_plot(CentralDep, pred = Dep_int, modx = trial, plot.points = T, modx.labels = c("Standard", "After Standard", "Odd"), legend.main = "Trial Type", colors = c("#96695a", "#c6880a", "#3ca277"))
+
+Cmodel+
+  ylab("Central Delta-Beta Coupling")+
+  xlab("Trimester 1 Depression Scores")+
+  theme_classic()+
+  theme(axis.title = element_text(size = 14),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))+
+  theme(legend.position="inside", 
+        legend.position.inside = c(.85,.8))
+
+
+CmodelQ <- interactions::interact_plot(CentralDep, pred = Dep_QSlope, modx = trial, plot.points = T, modx.labels = c("Standard", "After Standard", "Odd"), legend.main = "Trial Type", colors = c("#96695a", "#c6880a", "#3ca277"))
+
+CmodelQ+
+  ylab("Central Delta-Beta Coupling")+
+  xlab("Depression Quadratic Term")+
+  theme_classic()+
+  theme(axis.title = element_text(size = 14),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))+
+  theme(legend.position="inside", 
+        legend.position.inside = c(.85,.8))
+  
+  
+```
