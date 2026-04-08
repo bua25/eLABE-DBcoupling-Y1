@@ -1,0 +1,59 @@
+TITLE:
+  Quad growth model of depression (4 waves, MI);
+
+DATA:
+  TYPE = IMPUTATION;
+  FILE = missimplist.dat;
+
+VARIABLE:
+  NAMES = AGEC1
+    DEP_1
+    DEP_2
+    DEP_3
+    DEP_4
+    STR_1
+    STR_2
+    STR_3
+    STR_4
+    IBQN
+    F_ODD
+    C_ODD
+    P_ODD
+    F_STDR
+    C_STDR
+    P_STDR
+    F_AFTER
+    C_AFTER
+    P_AFTER
+    ID
+    GA_W
+    BIRTHW
+    AGE_RISK
+    MED_RISK
+    CHILDX
+    RWAVE
+    DIS;
+  USEVARIABLES = DEP_1
+    DEP_2
+    DEP_3
+    DEP_4;
+    
+  MISSING ARE *;
+
+ANALYSIS:
+  TYPE = GENERAL;
+  ESTIMATOR = MLR;
+
+MODEL:
+  ! Latent growth factors
+  i s q| 
+    DEP_1@0
+    DEP_2@1
+    DEP_3@4
+    DEP_4@9;
+
+  ! Estimate variances
+  i s q;
+
+OUTPUT:
+  TECH1 TECH4 STANDARDIZED CINTERVAL;

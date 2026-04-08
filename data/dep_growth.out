@@ -1,0 +1,905 @@
+Mplus VERSION 8.9 (Mac)
+MUTHEN & MUTHEN
+01/25/2026   9:22 PM
+
+INPUT INSTRUCTIONS
+
+  TITLE:
+    Linear growth model of depression (4 waves, MI);
+
+  DATA:
+    TYPE = IMPUTATION;
+    FILE = missimplist.dat;
+
+  VARIABLE:
+    NAMES = AGEC1
+      DEP_1
+      DEP_2
+      DEP_3
+      DEP_4
+      STR_1
+      STR_2
+      STR_3
+      STR_4
+      IBQN
+      F_ODD
+      C_ODD
+      P_ODD
+      F_STDR
+      C_STDR
+      P_STDR
+      F_AFTER
+      C_AFTER
+      P_AFTER
+      ID
+      GA_W
+      BIRTHW
+      AGE_RISK
+      MED_RISK
+      CHILDX
+      RWAVE
+      DIS;
+    USEVARIABLES = DEP_1
+      DEP_2
+      DEP_3
+      DEP_4;
+
+    MISSING ARE *;
+
+  ANALYSIS:
+    TYPE = GENERAL;
+    ESTIMATOR = MLR;
+
+  MODEL:
+    ! Latent growth factors
+    i s |
+      DEP_1@0
+      DEP_2@1
+      DEP_3@2
+      DEP_4@3;
+
+    ! Estimate variances
+    i s;
+
+  OUTPUT:
+    TECH1 TECH4 STANDARDIZED CINTERVAL;
+
+
+
+INPUT READING TERMINATED NORMALLY
+
+
+
+
+Linear growth model of depression (4 waves, MI);
+
+SUMMARY OF ANALYSIS
+
+Number of groups                                                 1
+Average number of observations                                 362
+
+Number of replications
+    Requested                                                   25
+    Completed                                                   25
+
+Number of dependent variables                                    4
+Number of independent variables                                  0
+Number of continuous latent variables                            2
+
+Observed dependent variables
+
+  Continuous
+   DEP_1       DEP_2       DEP_3       DEP_4
+
+Continuous latent variables
+   I           S
+
+
+Estimator                                                      MLR
+Information matrix                                        OBSERVED
+Maximum number of iterations                                  1000
+Convergence criterion                                    0.500D-04
+Maximum number of steepest descent iterations                   20
+Maximum number of iterations for H1                           2000
+Convergence criterion for H1                             0.100D-03
+
+Input data file(s)
+  Multiple data files from
+    missimplist.dat
+
+Input data format  FREE
+
+
+SUMMARY OF DATA FOR THE FIRST DATA SET
+
+     Number of missing data patterns             1
+
+
+SUMMARY OF MISSING DATA PATTERNS FOR THE FIRST DATA SET
+
+
+     MISSING DATA PATTERNS (x = not missing)
+
+           1
+ DEP_1     x
+ DEP_2     x
+ DEP_3     x
+ DEP_4     x
+
+
+     MISSING DATA PATTERN FREQUENCIES
+
+    Pattern   Frequency
+          1         362
+
+
+COVARIANCE COVERAGE OF DATA FOR THE FIRST DATA SET
+
+Minimum covariance coverage value   0.100
+
+
+     PROPORTION OF DATA PRESENT
+
+
+           Covariance Coverage
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+ DEP_1          1.000
+ DEP_2          1.000         1.000
+ DEP_3          1.000         1.000         1.000
+ DEP_4          1.000         1.000         1.000         1.000
+
+
+SAMPLE STATISTICS
+
+NOTE:  These are average results over 25 data sets.
+
+
+     ESTIMATED SAMPLE STATISTICS
+
+
+           Means
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+                4.969         4.645         4.491         5.984
+
+
+           Covariances
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+ DEP_1         21.746
+ DEP_2         13.020        22.451
+ DEP_3         13.643        14.596        24.608
+ DEP_4         10.602        11.170        13.113        25.707
+
+
+           Correlations
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+ DEP_1          1.000
+ DEP_2          0.589         1.000
+ DEP_3          0.590         0.621         1.000
+ DEP_4          0.448         0.465         0.521         1.000
+
+
+MODEL FIT INFORMATION
+
+Number of Free Parameters                        9
+
+Loglikelihood
+
+    H0 Value
+
+        Mean                             -4102.008
+        Std Dev                             11.725
+        Number of successful computations       25
+
+             Proportions                   Percentiles
+        Expected    Observed         Expected       Observed
+           0.990       1.000        -4129.283      -4125.263
+           0.980       1.000        -4126.086      -4125.263
+           0.950       0.960        -4121.293      -4125.263
+           0.900       0.920        -4117.034      -4118.869
+           0.800       0.800        -4111.875      -4115.206
+           0.700       0.760        -4108.156      -4108.123
+           0.500       0.480        -4102.008      -4104.531
+           0.300       0.320        -4095.859      -4097.467
+           0.200       0.240        -4092.140      -4091.978
+           0.100       0.120        -4086.981      -4090.915
+           0.050       0.080        -4082.722      -4084.675
+           0.020       0.040        -4077.929      -4080.801
+           0.010       0.000        -4074.733      -4080.801
+
+    H1 Value
+
+        Mean                             -4081.081
+        Std Dev                             12.540
+        Number of successful computations       25
+
+             Proportions                   Percentiles
+        Expected    Observed         Expected       Observed
+           0.990       1.000        -4110.252      -4107.514
+           0.980       0.960        -4106.834      -4107.514
+           0.950       0.960        -4101.708      -4107.514
+           0.900       0.920        -4097.152      -4101.240
+           0.800       0.840        -4091.635      -4092.350
+           0.700       0.720        -4087.657      -4087.900
+           0.500       0.440        -4081.081      -4081.798
+           0.300       0.240        -4074.505      -4079.336
+           0.200       0.120        -4070.527      -4073.179
+           0.100       0.120        -4065.010      -4071.114
+           0.050       0.080        -4060.454      -4062.300
+           0.020       0.040        -4055.328      -4055.375
+           0.010       0.040        -4051.910      -4055.375
+
+Information Criteria
+
+    Akaike (AIC)
+
+        Mean                              8222.015
+        Std Dev                             23.449
+        Number of successful computations       25
+
+             Proportions                   Percentiles
+        Expected    Observed         Expected       Observed
+           0.990       1.000         8167.465       8171.807
+           0.980       0.960         8173.858       8171.807
+           0.950       0.920         8183.444       8171.807
+           0.900       0.880         8191.963       8179.603
+           0.800       0.760         8202.280       8199.831
+           0.700       0.680         8209.718       8204.039
+           0.500       0.520         8222.015       8221.975
+           0.300       0.240         8234.312       8232.348
+           0.200       0.200         8241.750       8236.653
+           0.100       0.080         8252.068       8248.413
+           0.050       0.040         8260.587       8250.524
+           0.020       0.000         8270.173       8255.738
+           0.010       0.000         8276.565       8255.738
+
+    Bayesian (BIC)
+
+        Mean                              8257.040
+        Std Dev                             23.449
+        Number of successful computations       25
+
+             Proportions                   Percentiles
+        Expected    Observed         Expected       Observed
+           0.990       1.000         8202.490       8206.832
+           0.980       0.960         8208.882       8206.832
+           0.950       0.920         8218.468       8206.832
+           0.900       0.880         8226.988       8214.628
+           0.800       0.760         8237.305       8234.856
+           0.700       0.680         8244.743       8239.064
+           0.500       0.520         8257.040       8257.000
+           0.300       0.240         8269.337       8267.372
+           0.200       0.200         8276.775       8271.678
+           0.100       0.080         8287.092       8283.438
+           0.050       0.040         8295.612       8285.549
+           0.020       0.000         8305.198       8290.763
+           0.010       0.000         8311.590       8290.763
+
+    Sample-Size Adjusted BIC (n* = (n + 2) / 24)
+
+        Mean                              8228.487
+        Std Dev                             23.449
+        Number of successful computations       25
+
+             Proportions                   Percentiles
+        Expected    Observed         Expected       Observed
+           0.990       1.000         8173.937       8178.279
+           0.980       0.960         8180.330       8178.279
+           0.950       0.920         8189.916       8178.279
+           0.900       0.880         8198.435       8186.075
+           0.800       0.760         8208.752       8206.303
+           0.700       0.680         8216.190       8210.511
+           0.500       0.520         8228.487       8228.447
+           0.300       0.240         8240.784       8238.819
+           0.200       0.200         8248.222       8243.125
+           0.100       0.080         8258.540       8254.885
+           0.050       0.040         8267.059       8256.996
+           0.020       0.000         8276.645       8262.210
+           0.010       0.000         8283.037       8262.210
+
+Chi-Square Test of Model Fit
+
+        Degrees of freedom                       5
+
+        Mean                                30.436
+        Std Dev                              5.269
+        Number of successful computations       25
+
+             Proportions                   Percentiles
+        Expected    Observed         Expected       Observed
+           0.990       1.000            0.554         20.462
+           0.980       1.000            0.752         20.462
+           0.950       1.000            1.145         20.462
+           0.900       1.000            1.610         23.319
+           0.800       1.000            2.343         24.450
+           0.700       1.000            3.000         25.927
+           0.500       1.000            4.351         29.469
+           0.300       1.000            6.064         32.923
+           0.200       1.000            7.289         35.234
+           0.100       1.000            9.236         35.827
+           0.050       1.000           11.070         37.478
+           0.020       1.000           13.388         37.759
+           0.010       1.000           15.086         37.759
+
+RMSEA (Root Mean Square Error Of Approximation)
+
+        Mean                                 0.118
+        Std Dev                              0.012
+        Number of successful computations       25
+
+        Cumulative Distribution Function
+           Value    Function Value
+           0.990       1.000
+           0.980       1.000
+           0.950       1.000
+           0.900       1.000
+           0.800       1.000
+           0.700       1.000
+           0.500       1.000
+           0.300       1.000
+           0.200       1.000
+           0.100       0.040
+           0.050       0.000
+           0.020       0.000
+           0.010       0.000
+
+CFI/TLI
+
+    CFI
+
+        Mean                                 0.922
+        Std Dev                              0.016
+        Number of successful computations       25
+
+        Cumulative Distribution Function
+           Value    Function Value
+           0.990       1.000
+           0.980       1.000
+           0.950       1.000
+           0.900       0.080
+           0.800       0.000
+           0.700       0.000
+           0.500       0.000
+           0.300       0.000
+           0.200       0.000
+           0.100       0.000
+           0.050       0.000
+           0.020       0.000
+           0.010       0.000
+
+    TLI
+
+        Mean                                 0.906
+        Std Dev                              0.019
+        Number of successful computations       25
+
+        Cumulative Distribution Function
+           Value    Function Value
+           0.990       1.000
+           0.980       1.000
+           0.950       1.000
+           0.900       0.360
+           0.800       0.000
+           0.700       0.000
+           0.500       0.000
+           0.300       0.000
+           0.200       0.000
+           0.100       0.000
+           0.050       0.000
+           0.020       0.000
+           0.010       0.000
+
+SRMR (Standardized Root Mean Square Residual)
+
+        Mean                                 0.082
+        Std Dev                              0.009
+        Number of successful computations       25
+
+        Cumulative Distribution Function
+           Value    Function Value
+           0.990       1.000
+           0.980       1.000
+           0.950       1.000
+           0.900       1.000
+           0.800       1.000
+           0.700       1.000
+           0.500       1.000
+           0.300       1.000
+           0.200       1.000
+           0.100       0.960
+           0.050       0.000
+           0.020       0.000
+           0.010       0.000
+
+
+MODEL RESULTS
+
+                                                    Two-Tailed   Rate of
+                    Estimate       S.E.  Est./S.E.    P-Value    Missing
+
+ I        |
+    DEP_1              1.000      0.000    999.000    999.000      0.000
+    DEP_2              1.000      0.000    999.000    999.000      0.000
+    DEP_3              1.000      0.000    999.000    999.000      0.000
+    DEP_4              1.000      0.000    999.000    999.000      0.000
+
+ S        |
+    DEP_1              0.000      0.000    999.000    999.000      0.000
+    DEP_2              1.000      0.000    999.000    999.000      0.000
+    DEP_3              2.000      0.000    999.000    999.000      0.000
+    DEP_4              3.000      0.000    999.000    999.000      0.000
+
+ S        WITH
+    I                 -0.548      0.691     -0.792      0.428      0.448
+
+ Means
+    I                  4.660      0.263     17.687      0.000      0.214
+    S                  0.208      0.093      2.226      0.026      0.213
+
+ Intercepts
+    DEP_1              0.000      0.000    999.000    999.000      0.000
+    DEP_2              0.000      0.000    999.000    999.000      0.000
+    DEP_3              0.000      0.000    999.000    999.000      0.000
+    DEP_4              0.000      0.000    999.000    999.000      0.000
+
+ Variances
+    I                 13.933      2.317      6.015      0.000      0.188
+    S                  0.278      0.390      0.712      0.476      0.416
+
+ Residual Variances
+    DEP_1              8.659      1.804      4.800      0.000      0.230
+    DEP_2              9.137      1.432      6.381      0.000      0.320
+    DEP_3             10.169      1.740      5.844      0.000      0.082
+    DEP_4             15.078      2.534      5.950      0.000      0.414
+
+
+QUALITY OF NUMERICAL RESULTS
+
+     Average Condition Number for the Information Matrix      0.101E-01
+       (ratio of smallest to largest eigenvalue)
+
+
+STANDARDIZED MODEL RESULTS
+
+
+STDYX Standardization
+
+                                                    Two-Tailed   Rate of
+                    Estimate       S.E.  Est./S.E.    P-Value    Missing
+
+ I        |
+    DEP_1              0.785      0.046     17.115      0.000      0.280
+    DEP_2              0.791      0.046     17.015      0.000      0.369
+    DEP_3              0.778      0.055     14.261      0.000      0.294
+    DEP_4              0.703      0.061     11.603      0.000      0.307
+
+ S        |
+    DEP_1              0.000      0.000      0.000      1.000      0.000
+    DEP_2              0.118      0.082      1.451      0.147      0.234
+    DEP_3              0.233      0.161      1.448      0.148      0.243
+    DEP_4              0.317      0.222      1.428      0.153      0.252
+
+ S        WITH
+    I                 -0.272      0.412     -0.661      0.509      0.160
+
+ Means
+    I                  1.250      0.093     13.403      0.000      0.258
+    S                  0.444      1.391      0.319      0.750      0.043
+
+ Intercepts
+    DEP_1              0.000      0.000      0.000      1.000      0.000
+    DEP_2              0.000      0.000      0.000      1.000      0.000
+    DEP_3              0.000      0.000      0.000      1.000      0.000
+    DEP_4              0.000      0.000      0.000      1.000      0.000
+
+ Variances
+    I                  1.000      0.000  *********      0.000      0.000
+    S                  1.000      0.000  *********      0.000      0.000
+
+ Residual Variances
+    DEP_1              0.383      0.072      5.337      0.000      0.279
+    DEP_2              0.410      0.052      7.933      0.000      0.237
+    DEP_3              0.442      0.058      7.626      0.000      0.129
+    DEP_4              0.533      0.070      7.636      0.000      0.370
+
+
+STDY Standardization
+
+                                                    Two-Tailed   Rate of
+                    Estimate       S.E.  Est./S.E.    P-Value    Missing
+
+ I        |
+    DEP_1              0.785      0.046     17.115      0.000      0.280
+    DEP_2              0.791      0.046     17.015      0.000      0.369
+    DEP_3              0.778      0.055     14.261      0.000      0.294
+    DEP_4              0.703      0.061     11.603      0.000      0.307
+
+ S        |
+    DEP_1              0.000      0.000      0.000      1.000      0.000
+    DEP_2              0.118      0.082      1.451      0.147      0.234
+    DEP_3              0.233      0.161      1.448      0.148      0.243
+    DEP_4              0.317      0.222      1.428      0.153      0.252
+
+ S        WITH
+    I                 -0.272      0.412     -0.661      0.509      0.160
+
+ Means
+    I                  1.250      0.093     13.403      0.000      0.258
+    S                  0.444      1.391      0.319      0.750      0.043
+
+ Intercepts
+    DEP_1              0.000      0.000      0.000      1.000      0.000
+    DEP_2              0.000      0.000      0.000      1.000      0.000
+    DEP_3              0.000      0.000      0.000      1.000      0.000
+    DEP_4              0.000      0.000      0.000      1.000      0.000
+
+ Variances
+    I                  1.000      0.000  *********      0.000      0.000
+    S                  1.000      0.000  *********      0.000      0.000
+
+ Residual Variances
+    DEP_1              0.383      0.072      5.337      0.000      0.279
+    DEP_2              0.410      0.052      7.933      0.000      0.237
+    DEP_3              0.442      0.058      7.626      0.000      0.129
+    DEP_4              0.533      0.070      7.636      0.000      0.370
+
+
+STD Standardization
+
+                                                    Two-Tailed   Rate of
+                    Estimate       S.E.  Est./S.E.    P-Value    Missing
+
+ I        |
+    DEP_1              3.730      0.311     11.996      0.000      0.190
+    DEP_2              3.730      0.311     11.996      0.000      0.190
+    DEP_3              3.730      0.311     11.996      0.000      0.190
+    DEP_4              3.730      0.311     11.996      0.000      0.190
+
+ S        |
+    DEP_1              0.000      0.000      0.000      1.000      0.000
+    DEP_2              0.559      0.388      1.439      0.150      0.241
+    DEP_3              1.117      0.777      1.439      0.150      0.241
+    DEP_4              1.676      1.165      1.439      0.150      0.241
+
+ S        WITH
+    I                 -0.272      0.412     -0.661      0.509      0.160
+
+ Means
+    I                  1.250      0.093     13.403      0.000      0.258
+    S                  0.444      1.391      0.319      0.750      0.043
+
+ Intercepts
+    DEP_1              0.000      0.000      0.000      1.000      0.000
+    DEP_2              0.000      0.000      0.000      1.000      0.000
+    DEP_3              0.000      0.000      0.000      1.000      0.000
+    DEP_4              0.000      0.000      0.000      1.000      0.000
+
+ Variances
+    I                  1.000      0.000  *********      0.000      0.000
+    S                  1.000      0.000  *********      0.000      0.000
+
+ Residual Variances
+    DEP_1              8.659      1.804      4.800      0.000      0.230
+    DEP_2              9.137      1.432      6.381      0.000      0.320
+    DEP_3             10.169      1.740      5.844      0.000      0.082
+    DEP_4             15.078      2.534      5.950      0.000      0.414
+
+
+R-SQUARE
+
+    Observed                                        Two-Tailed   Rate of
+    Variable        Estimate       S.E.  Est./S.E.    P-Value    Missing
+
+    DEP_1              0.617      0.072      8.584      0.000      0.279
+    DEP_2              0.590      0.052     11.409      0.000      0.237
+    DEP_3              0.558      0.058      9.636      0.000      0.129
+    DEP_4              0.467      0.070      6.680      0.000      0.370
+
+
+CONFIDENCE INTERVALS OF MODEL RESULTS
+
+                  Lower .5%  Lower 2.5%    Lower 5%    Estimate    Upper 5%  Upper 2.5%   Upper .5%
+
+ I        |
+    DEP_1            1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    DEP_2            1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    DEP_3            1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    DEP_4            1.000       1.000       1.000       1.000       1.000       1.000       1.000
+
+ S        |
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2            1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    DEP_3            2.000       2.000       2.000       2.000       2.000       2.000       2.000
+    DEP_4            3.000       3.000       3.000       3.000       3.000       3.000       3.000
+
+ S        WITH
+    I               -2.329      -1.903      -1.685      -0.548       0.590       0.808       1.234
+
+ Means
+    I                3.982       4.144       4.227       4.660       5.094       5.177       5.339
+    S               -0.033       0.025       0.054       0.208       0.362       0.391       0.449
+
+ Intercepts
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_3            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_4            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+
+ Variances
+    I                7.966       9.393      10.123      13.933      17.744      18.474      19.900
+    S               -0.727      -0.486      -0.364       0.278       0.919       1.042       1.282
+
+ Residual Variances
+    DEP_1            4.013       5.123       5.691       8.659      11.626      12.194      13.304
+    DEP_2            5.449       6.330       6.781       9.137      11.492      11.943      12.825
+    DEP_3            5.687       6.759       7.307      10.169      13.032      13.580      14.651
+    DEP_4            8.551      10.111      10.910      15.078      19.247      20.046      21.606
+
+
+CONFIDENCE INTERVALS OF STANDARDIZED MODEL RESULTS
+
+
+STDYX Standardization
+
+                  Lower .5%  Lower 2.5%    Lower 5%    Estimate    Upper 5%  Upper 2.5%   Upper .5%
+
+ I        |
+    DEP_1            0.667       0.695       0.709       0.785       0.860       0.875       0.903
+    DEP_2            0.671       0.700       0.715       0.791       0.868       0.882       0.911
+    DEP_3            0.637       0.671       0.688       0.778       0.867       0.885       0.918
+    DEP_4            0.547       0.584       0.603       0.703       0.802       0.821       0.859
+
+ S        |
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2           -0.092      -0.042      -0.016       0.118       0.252       0.278       0.328
+    DEP_3           -0.181      -0.082      -0.032       0.233       0.497       0.548       0.647
+    DEP_4           -0.255      -0.118      -0.048       0.317       0.683       0.753       0.890
+
+ S        WITH
+    I               -1.332      -1.079      -0.949      -0.272       0.405       0.535       0.788
+
+ Means
+    I                1.010       1.068       1.097       1.250       1.404       1.433       1.491
+    S               -3.140      -2.283      -1.845       0.444       2.733       3.171       4.028
+
+ Intercepts
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_3            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_4            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+
+ Variances
+    I                1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    S                1.000       1.000       1.000       1.000       1.000       1.000       1.000
+
+ Residual Variances
+    DEP_1            0.198       0.243       0.265       0.383       0.502       0.524       0.568
+    DEP_2            0.277       0.309       0.325       0.410       0.495       0.511       0.543
+    DEP_3            0.293       0.328       0.346       0.442       0.537       0.555       0.591
+    DEP_4            0.353       0.397       0.419       0.533       0.648       0.670       0.713
+
+
+STDY Standardization
+
+                  Lower .5%  Lower 2.5%    Lower 5%    Estimate    Upper 5%  Upper 2.5%   Upper .5%
+
+ I        |
+    DEP_1            0.667       0.695       0.709       0.785       0.860       0.875       0.903
+    DEP_2            0.671       0.700       0.715       0.791       0.868       0.882       0.911
+    DEP_3            0.637       0.671       0.688       0.778       0.867       0.885       0.918
+    DEP_4            0.547       0.584       0.603       0.703       0.802       0.821       0.859
+
+ S        |
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2           -0.092      -0.042      -0.016       0.118       0.252       0.278       0.328
+    DEP_3           -0.181      -0.082      -0.032       0.233       0.497       0.548       0.647
+    DEP_4           -0.255      -0.118      -0.048       0.317       0.683       0.753       0.890
+
+ S        WITH
+    I               -1.332      -1.079      -0.949      -0.272       0.405       0.535       0.788
+
+ Means
+    I                1.010       1.068       1.097       1.250       1.404       1.433       1.491
+    S               -3.140      -2.283      -1.845       0.444       2.733       3.171       4.028
+
+ Intercepts
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_3            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_4            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+
+ Variances
+    I                1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    S                1.000       1.000       1.000       1.000       1.000       1.000       1.000
+
+ Residual Variances
+    DEP_1            0.198       0.243       0.265       0.383       0.502       0.524       0.568
+    DEP_2            0.277       0.309       0.325       0.410       0.495       0.511       0.543
+    DEP_3            0.293       0.328       0.346       0.442       0.537       0.555       0.591
+    DEP_4            0.353       0.397       0.419       0.533       0.648       0.670       0.713
+
+
+STD Standardization
+
+                  Lower .5%  Lower 2.5%    Lower 5%    Estimate    Upper 5%  Upper 2.5%   Upper .5%
+
+ I        |
+    DEP_1            2.929       3.121       3.219       3.730       4.242       4.340       4.532
+    DEP_2            2.929       3.121       3.219       3.730       4.242       4.340       4.532
+    DEP_3            2.929       3.121       3.219       3.730       4.242       4.340       4.532
+    DEP_4            2.929       3.121       3.219       3.730       4.242       4.340       4.532
+
+ S        |
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2           -0.441      -0.202      -0.080       0.559       1.197       1.320       1.559
+    DEP_3           -0.883      -0.405      -0.160       1.117       2.395       2.639       3.118
+    DEP_4           -1.324      -0.607      -0.240       1.676       3.592       3.959       4.676
+
+ S        WITH
+    I               -1.332      -1.079      -0.949      -0.272       0.405       0.535       0.788
+
+ Means
+    I                1.010       1.068       1.097       1.250       1.404       1.433       1.491
+    S               -3.140      -2.283      -1.845       0.444       2.733       3.171       4.028
+
+ Intercepts
+    DEP_1            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_2            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_3            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+    DEP_4            0.000       0.000       0.000       0.000       0.000       0.000       0.000
+
+ Variances
+    I                1.000       1.000       1.000       1.000       1.000       1.000       1.000
+    S                1.000       1.000       1.000       1.000       1.000       1.000       1.000
+
+ Residual Variances
+    DEP_1            4.013       5.123       5.691       8.659      11.626      12.194      13.304
+    DEP_2            5.449       6.330       6.781       9.137      11.492      11.943      12.825
+    DEP_3            5.687       6.759       7.307      10.169      13.032      13.580      14.651
+    DEP_4            8.551      10.111      10.910      15.078      19.247      20.046      21.606
+
+
+TECHNICAL 1 OUTPUT
+
+
+     PARAMETER SPECIFICATION
+
+
+           NU
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+                  0             0             0             0
+
+
+           LAMBDA
+              I             S
+              ________      ________
+ DEP_1              0             0
+ DEP_2              0             0
+ DEP_3              0             0
+ DEP_4              0             0
+
+
+           THETA
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+ DEP_1              1
+ DEP_2              0             2
+ DEP_3              0             0             3
+ DEP_4              0             0             0             4
+
+
+           ALPHA
+              I             S
+              ________      ________
+                  5             6
+
+
+           BETA
+              I             S
+              ________      ________
+ I                  0             0
+ S                  0             0
+
+
+           PSI
+              I             S
+              ________      ________
+ I                  7
+ S                  8             9
+
+
+     STARTING VALUES
+
+
+           NU
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+                0.000         0.000         0.000         0.000
+
+
+           LAMBDA
+              I             S
+              ________      ________
+ DEP_1          1.000         0.000
+ DEP_2          1.000         1.000
+ DEP_3          1.000         2.000
+ DEP_4          1.000         3.000
+
+
+           THETA
+              DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________
+ DEP_1         11.207
+ DEP_2          0.000        10.783
+ DEP_3          0.000         0.000        12.472
+ DEP_4          0.000         0.000         0.000        13.577
+
+
+           ALPHA
+              I             S
+              ________      ________
+                4.599         0.264
+
+
+           BETA
+              I             S
+              ________      ________
+ I              0.000         0.000
+ S              0.000         0.000
+
+
+           PSI
+              I             S
+              ________      ________
+ I             21.255
+ S              0.000         2.619
+
+
+TECHNICAL 4 OUTPUT
+
+NOTE:  These are average results over 25 data sets.
+
+
+     ESTIMATES DERIVED FROM THE MODEL
+
+
+           Estimated Means for the Latent Variables
+              I             S
+              ________      ________
+                4.660         0.208
+
+
+           Estimated Covariance Matrix for the Latent Variables
+              I             S
+              ________      ________
+ I             13.933
+ S             -0.548         0.278
+
+
+           Estimated Correlation Matrix for the Latent Variables
+              I             S
+              ________      ________
+ I              1.000
+ S             -0.278         1.000
+
+
+     Beginning Time:  21:22:29
+        Ending Time:  21:22:29
+       Elapsed Time:  00:00:00
+
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2023 Muthen & Muthen

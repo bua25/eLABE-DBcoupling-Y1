@@ -1,0 +1,765 @@
+---
+title: "Imputed Analyses"
+author: "Berenice Anaya"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Installing packages 
+list.of.packages <- c("dplyr", "plyr","stats","ggplot2", "psych", "nlme","tinytex","lattice", "mitml", "lme4","interactions", "jtools", "cowplot", "tidyr", "readr", "mice", "broom", "miceadds", "broom.mixed", "pander", "ggsignif", "here", "stringr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages) 
+# Loading packages
+lapply(list.of.packages, require, character.only = TRUE)
+```
+
+# Introduction
+This script runs the analyses for the paper with multiple imputations to probe sensitivity/ robustness of the results
+
+# 1. Loading Datasets
+
+## 1.1. Behavioral Datasets
+```{r cars}
+demo <- read.csv(here("data", "demo.csv"), header = T)
+demo <- demo%>%
+  dplyr::select(modid, screen_delivery_ga_weeks:child_sex, mom_age_risk, mat_med_risk_sum, child_age_y1_assessment)%>%
+  dplyr::rename(id = modid)
+
+ibq <- read.csv(here("data","Anaya_02_20_2024_ibqr.csv"), header=T)
+
+ibq <- ibq %>%
+    tidyr::drop_na(ibqr_neg) %>%
+  dplyr::group_by(modid) %>%
+  dplyr::summarise(
+    ibq_neg_m = mean(ibqr_neg, na.rm = TRUE),
+    n_obs = sum(!is.na(ibqr_neg)),
+    .groups = "drop"
+  )%>%
+  dplyr::rename(id = modid)
+
+  
+pren_stress <- read.csv(here("data","Stress_preg.csv"), header = T)
+colnames(pren_stress) <- c("id", "dep_1", "dep_2", "dep_3", "dep_4", "stress_1", "stress_2", "stress_3", "stress_4")
+
+ses <- read.csv(here("data","social_dis.csv"), header = T)
+ses <- ses%>%
+  dplyr::select(MODID, disadv_prenatal)%>% #selecting only prenatal disadvantage
+  dplyr::rename(id = MODID)
+
+exc <- read.csv(here("data","exclusion.csv"), header = T)
+exc <- exc%>%
+  dplyr::select(modid, combined_exclusion_initial_analyses, irb_exclusion)%>%
+  dplyr::rename(id = modid)%>%
+  dplyr::mutate(exc_all = if_else(combined_exclusion_initial_analyses == 1 | irb_exclusion == 1, 1, 0))%>%
+  dplyr::select(id, exc_all)
+
+# 81 subjects were excluded - running imputations on all analyses then, including growth models of caregiver stress
+
+QC <- read.csv(here("data","HAPPE_pipelineQC_Y1.csv"), header = T) # need this dataset
+QC$id <- substr(QC$Row, 1,7)
+QC <- QC%>%
+  dplyr::select(id, r.alldata.post.pre.waveleting)%>%
+  dplyr::mutate(exc = if_else(r.alldata.post.pre.waveleting < .15, 1, 0)) # setting exclusion to < .15
+```
+
+
+## 1.2. Delta-Beta Synchrony Datasets (different datasets per trial type)
+```{r}
+# 168 subjects with EEG after HAPPE
+odd_sync <- read.csv(here("data","OddSynchrony.csv"), header = T)
+std_sync <- read.csv(here("data","StdrSynchrony.csv"), header = T)
+aft_sync <- read.csv(here("data","AfterSynchrony.csv"), header = T)
+
+# renaming columns and merging wide
+names(odd_sync)[2:5] <- paste0(names(odd_sync)[2:5], "_odd")
+names(std_sync)[2:5] <- paste0(names(std_sync)[2:5], "_stdr")
+names(aft_sync)[2:5] <- paste0(names(aft_sync)[2:5], "_after")
+
+wide_all_sync <- merge(odd_sync, std_sync, by = "id")
+wide_all_sync <- merge(wide_all_sync, aft_sync, by = "id")
+wide_all_sync <- wide_all_sync%>%
+  dplyr::select(-c(trial_odd, trial_after, trial_stdr))
+
+# excluding data based on HAPPY QC
+wide_all_sync <- merge(wide_all_sync, QC, by="id", all = T)
+wide_all_sync <- wide_all_sync%>%
+  dplyr::mutate(across(
+    -id,
+    ~ if_else(exc == 1, NA, .)
+  ))%>%
+  dplyr::select( -exc)
+
+describe(wide_all_sync)
+# 124 participants with usable delta-beta coupling scores
+
+
+# shaping to long
+all_sync <- reshape(wide_all_sync,
+                    varying = 2:10,
+                    timevar = "trial",
+                    idvar = "id",
+                    direction = "long",
+                    sep = "_")
+
+```
+
+## 1.3. Visualizing correlations between coupling scores between trial types
+```{r}
+library(ggcorrplot)
+
+vars <- wide_all_sync %>% 
+  select(-r.alldata.post.pre.waveleting)%>%
+  select(where(is.numeric))
+
+corr <- cor(vars, use = "pairwise.complete.obs")
+
+p.mat <- cor_pmat(vars)
+
+ggcorrplot(
+  corr,
+  p.mat = p.mat,
+  type = "lower",
+  lab = TRUE,
+  insig = "blank"
+)
+
+```
+
+
+# 2. Missingness Analysis
+```{r}
+library(mice)
+library(naniar)
+```
+
+## 2.1. Quantifying missingness
+We first merge all datasets 
+```{r}
+# we first merge all relevant study variables
+analysis_df_all <- merge(pren_stress, ibq, by ="id", all = T)
+analysis_df_all <- merge(analysis_df_all, wide_all_sync, by ="id", all = T)
+
+# excluding participants from the analytical sample  based on global exclusion criteria
+analysis_df_all <- merge(analysis_df_all, exc, by="id", all = T)
+analysis_df_all <- analysis_df_all %>%
+  dplyr::mutate(across(
+    -id,
+    ~ if_else(exc_all == 1, NA, .)
+  ))%>%
+  dplyr::select(-exc_all)
+
+# now merging with demo and ses to get information on missing participants 
+df_all_missing <- merge(analysis_df_all, ses, by="id", all = T)
+df_all_missing <- merge(demo, df_all_missing, by="id", all = T)
+
+
+describe(df_all_missing)
+
+# identifying rows with all NAs
+rows_all_na <- df_all_missing %>%
+  filter(if_all(-c(id,disadv_prenatal),  is.na))
+
+# Wrangling for Mplus analysis
+mplus_elabe_df <- df_all
+
+mplus_elabe_df <- mplus_elabe_df%>%
+  #mutating id column for mplus
+  dplyr::mutate(id_imp = as.integer(str_extract(id, "\\d+")))%>%
+  #setting NA values to -999
+  dplyr::mutate(across(everything(), ~ replace_na(., 999)))
+
+# Exporting
+write.table(mplus_elabe_df, "mplus_df_names.csv", sep=",", row.names = F, na = "999", quote=F)
+
+# creating new dataset for MICE imputations
+df_all<- df_all_missing
+```
+
+
+### Missing numbers
+```{r}
+# missing pattern all
+md.pattern(df_all)
+
+# missing pattern repeated variables
+df_all %>%
+  select(id, dep_1:stress_4) %>%
+  md.pattern()
+
+```
+
+## 2.2. Visualizing co-occurring missing data
+```{r}
+# all 
+vis_miss(df_all)
+gg_miss_upset(df_all)
+
+# caregiver stress
+df_all %>%
+  select(id, dep_1:stress_4) %>%
+  vis_miss()
+
+df_all %>%
+  select(id, dep_1:stress_4) %>%
+  gg_miss_upset()
+```
+
+
+## 2.3. Examine Predictors of Missingness 
+Based on patterns above, we predict missingness in depression and stress at the 4th measurement (birth), along with EEG measures
+```{r}
+df_all$miss_dep_4 <- is.na(df_all$dep_4)
+df_all$miss_stress_4 <- is.na(df_all$stress_4)
+
+df_all$miss_frontal_sdr <- is.na(df_all$FrontalSync_stdr)
+df_all$miss_central_odd <- is.na(df_all$CentralSync_odd)
+df_all$miss_par_after <- is.na(df_all$ParietalSync_after)
+
+# setting mom age risk to factor
+df_all$mom_age_risk <- as.factor(df_all$mom_age_risk)
+
+# Prediction models
+summary(glm(miss_dep_4 ~ dep_1 + dep_2 + dep_3 + stress_1 + stress_2 + stress_3 + mat_med_risk_sum + ibqr_neg + disadv_prenatal + mom_age_risk,
+    data = df_all,
+    family = binomial))
+
+summary(glm(miss_stress_4 ~ dep_1 + dep_2 + dep_3 + stress_1 + stress_2 + stress_3 + mat_med_risk_sum + ibqr_neg + disadv_prenatal + mom_age_risk,
+    data = df_all,
+    family = binomial))
+
+summary(glm(miss_frontal_sdr ~ dep_1 + dep_2 + dep_3 + stress_1 + stress_2 + stress_3 + mat_med_risk_sum + ibqr_neg + disadv_prenatal + mom_age_risk,
+    data = df_all,
+    family = binomial))
+
+summary(glm(miss_central_odd ~ dep_1 + dep_2 + dep_3 + stress_1 + stress_2 + stress_3 + mat_med_risk_sum + ibqr_neg + disadv_prenatal + mom_age_risk,
+    data = df_all,
+    family = binomial))
+
+summary(glm(miss_par_after ~ dep_1 + dep_2 + dep_3 + stress_1 + stress_2 + stress_3 + mat_med_risk_sum + ibqr_neg + disadv_prenatal + mom_age_risk,
+    data = df_all,
+    family = binomial))
+```
+
+# Imputation overview
+We now move to imputation models. These models will be ran in two separate sets. One imputation model will address missingness in repeated measures of depression and stress, to test whether growth models with MI lool similar to the ones estimated with REML.
+
+A second imputation model will address missingness in EEG variables across the trials. Missingness in EEG is relatively large compared to the overall sample, because data collection was only attempted with a subsample (170). So we want to estimate missingness in relation to that, and not the entire enrolled sample (399). These models will be estimated using the exported growth parameters from depression, and average stress, so that we can test the original models.
+
+# 3. Imputation for Depression and Stress Models
+
+## 3.1. Reshape data for running imputation (long format)
+Reshaping with usual methods was causing problems with MICE imputation block chains, so I split the dep and sress data then row bind, then merge with everything else.
+```{r}
+library(tidyr)
+
+t1 <- df_all %>%
+  dplyr::select(id, dep_1, stress_1)%>%
+  dplyr::mutate(time = 0)%>%
+  dplyr::rename(dep=dep_1, stress=stress_1)
+
+t2 <- df_all %>%
+  dplyr::select(id, dep_2, stress_2)%>%
+  dplyr::mutate(time = 1)%>%
+  dplyr::rename(dep=dep_2, stress=stress_2)
+
+t3 <- df_all %>%
+  dplyr::select(id, dep_3, stress_3)%>%
+  dplyr::mutate(time = 2)%>%
+  dplyr::rename(dep=dep_3, stress=stress_3)
+
+t4 <- df_all %>%
+  dplyr::select(id, dep_4, stress_4)%>%
+  dplyr::mutate(time = 3)%>%
+  dplyr::rename(dep=dep_4, stress=stress_4)
+
+long_df_all <- rbind(t1, t2)
+long_df_all <- rbind(long_df_all, t3)
+long_df_all <- rbind(long_df_all, t4)
+
+# merging with time invariant variables
+df_all_tiv <- df_all%>%
+  dplyr::select(id:mat_med_risk_sum, disadv_prenatal)
+  
+long_df_all <- merge(long_df_all, df_all_tiv, by="id", all = T)
+
+long_df_all$time_d <- factor(long_df_all$time,
+                          levels = c("0","1","2","3"))
+
+# converting variables to factors
+long_df_all$child_sex <- as.factor(long_df_all$child_sex)
+long_df_all$mom_age_risk <- as.factor(long_df_all$mom_age_risk)
+
+
+
+# making new id column for MICE (the block chains do not work with id as chr structure)
+long_df_all <- long_df_all %>%
+  dplyr::mutate(id_imp = as.integer(str_extract(id, "\\d+")))
+
+long_df_all<- long_df_all%>%
+  dplyr::select(dep:id_imp)%>%
+  dplyr::rename(id = id_imp)
+```
+
+## 3.2 Descriptives by wave
+```{r}
+describe.by(long_df_all, group = long_df_all$time_d)
+
+# create centered and quadratic time variables
+long_df_all <- long_df_all%>%
+  dplyr::mutate(time_c = as.numeric(scale(time, center = T, scale = F)),
+                time_c2 = time_c^2)
+
+# removing one participant with only disadvantage variable
+long_df_all <- long_df_all%>%
+  dplyr::filter(id != 1652)
+
+#inspecting na N
+colSums(is.na(long_df_all))
+```
+
+
+
+## 3.3 Imputation model of both depression and stress as repeated measures
+
+### Combined Predictor Matrix
+```{r}
+predA <- make.predictorMatrix(long_df_all)
+
+predA["id", ] <- 0       # tells mice id not imputed
+predA[,"id"] <- 0  
+# Identify cluster variable
+predA["dep", "id"] <- -2
+predA["stress", "id"] <- -2      # tells mice that id is not a predictor but a grouping variable --> random intercept
+
+```
+
+### Stress Imputation Methods
+```{r}
+methA <- make.method(long_df_all)
+
+methA["dep"] <- "2l.pmm"  
+methA["stress"] <- "2l.pmm"   # continuous repeated measure
+methA["child_sex"]      <- "logreg"
+methA["mom_age_risk"]      <- "polyreg"
+methA["id"]             <- ""
+methA["time"]           <- ""
+
+methA
+```
+
+
+### Run combined imputation model
+```{r}
+
+impA <- 
+  mice:: mice(
+  long_df_all,
+  m = 40,               # ≥ % missing recommended
+  maxit = 50,
+  method = methA,
+  predictorMatrix = predA,
+# blocks = blocks,
+  seed = 2025
+)
+
+plot(impA)
+densityplot(impA)
+```
+
+
+## 4. Depression and Stress growth models
+
+## 4.1. Linear change
+```{r}
+# depression model
+fit_dep <- with(
+  impA,
+  lmer(
+    dep ~ 1 + time +
+      (1 | id)
+  )
+)
+
+pool_dep <- pool(fit_dep)
+summary(pool_dep, conf.int = TRUE)
+
+
+# stress model
+fit_st <- with(
+  impA,
+  lmer(
+    stress ~ 1 + time +
+      (1 | id)
+  )
+)
+
+pool_st <- pool(fit_st)
+summary(pool_st, conf.int = TRUE)
+```
+### Results:
+Here, neither depression nor stress trajectories sig changed over time
+
+## 4.1. Quadratic change
+```{r}
+# depression model
+fit_depQ <- with(
+  impA,
+  lmer(
+    dep ~ 1 + time_c + time_c2+
+      (1  | id)
+  )
+)
+
+pool_depQ <- pool(fit_depQ)
+summary(pool_depQ, conf.int = TRUE)
+
+
+# stress model
+fit_stQ <- with(
+  impA,
+  lmer(
+    stress ~ 1 + time_c + time_c2+
+      (1  | id)
+  )
+)
+
+pool_stQ <- pool(fit_stQ)
+summary(pool_stQ, conf.int = TRUE)
+```
+
+
+## 5. Imputation models of delta-beta coupling
+
+## 5.1. Getting the data ready
+```{r}
+stress_preds <- read.csv(here("data", "stress_preds.csv"), header = T)
+
+all_sync <- merge(all_sync, stress_preds, by="id", all.x = T)
+all_sync <- merge(all_sync, ibq, by="id", all.x = T)
+all_sync <- merge(all_sync, demo, by="id", all.x = T)
+all_sync<- merge(all_sync, ses, by="id", all.x = T)
+
+all_sync <- all_sync%>%
+  dplyr::select(-c(n_obs, r.alldata.post.pre.waveleting))
+
+colSums(is.na(all_sync))
+
+# change id column for MICE models
+all_sync <- all_sync %>%
+  dplyr::mutate(id_imp = as.integer(str_extract(id, "\\d+")))
+
+all_sync<- all_sync%>%
+  dplyr::select(trial:id_imp)%>%
+  dplyr::rename(id = id_imp)
+
+# separating level-1 and level-2 data
+df_lvl2 <- all_sync %>%
+  dplyr::select(Dep_int:id)%>%
+  dplyr::distinct()
+
+
+df_lvl1 <- all_sync %>%
+  dplyr::select(
+    id,
+    trial,
+    FrontalSync:ParietalSync
+  )
+#reordering trial for contrast later
+df_lvl1$trial <- factor(df_lvl1$trial, ordered = FALSE)
+df_lvl1$trial <- relevel(df_lvl1$trial, ref = "odd")
+```
+
+### Predictor Matrices
+```{r}
+pred_lvl2 <- make.predictorMatrix(df_lvl2)
+pred_lvl2[, "id"] <- 0
+pred_lvl2["id", ] <- 0
+
+
+pred_lvl1 <- make.predictorMatrix(df_lvl1)
+
+# Declare cluster
+pred_lvl1[, "id"] <- -2
+pred_lvl1["id", ] <- 0
+
+# Prevent self-prediction
+diag(pred_lvl1) <- 0
+
+```
+
+###  Imputation Methods
+```{r}
+meth_lvl2 <- make.method(df_lvl2)
+meth_lvl2["id"] <- ""       # never impute ID
+meth_lvl2[] <- "pmm"
+
+meth_lvl1 <- make.method(df_lvl1)
+meth_lvl1[c("id", "trial")] <- ""
+meth_lvl1["FrontalSync"] <- "2l.pmm"   # continuous repeated measure
+meth_lvl1["CentralSync"] <- "2l.pmm" 
+meth_lvl1["ParietalSync"] <- "2l.pmm" 
+
+
+```
+
+
+### Running the models
+```{r}
+# level 2 variables (only IBQ being imputed here - everything else has no missingness)
+imp_lvl2 <- mice(
+  df_lvl2,
+  m = 40,
+  method = meth_lvl2,
+  predictorMatrix = pred_lvl2,
+  seed = 123
+)
+plot(imp_lvl2)
+densityplot(imp_lvl2)
+
+# delta-beta coupling variables
+imp_lvl1 <- mice(
+  df_lvl1,
+  m = 40,
+  method = meth_lvl1,
+  predictorMatrix = pred_lvl1,
+  seed = 123
+)
+
+plot(imp_lvl1)
+densityplot(imp_lvl1)
+```
+
+### Merging imputations
+```{r}
+library(purrr)
+
+lvl1_long <- complete(imp_lvl1, action = "long", include = TRUE)
+lvl2_long <- complete(imp_lvl2, action = "long", include = TRUE)
+
+df_imp_long <- lvl1_long %>%
+  left_join(
+    lvl2_long,
+    by = c("id", ".imp")
+  )
+
+imp_final <- as.mids(df_imp_long)
+```
+
+### Sanity checks
+```{r}
+# inspecting one dataset
+comp1 <- complete(imp_final, 1)
+
+# No missing values left?
+colSums(is.na(complete(imp_final, 1)))
+
+```
+
+
+### Frontal Models
+```{r}
+FrontalT <- with(
+  imp_final,
+  lmer(FrontalSync ~ 1 + trial +
+              (1 | id) 
+            ))
+summary(FrontalT)
+
+pool_FrontalT <- pool(FrontalT)
+summary(pool_FrontalT, conf.int = TRUE)
+
+# adding covariates
+FrontalCOV <-  with(
+  imp_final,
+  lmer(FrontalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+              (1 | id)
+  ))
+
+pool_FrontalCOV <- pool(FrontalCOV)
+summary(pool_FrontalCOV, conf.int = TRUE)
+
+# Prenatal Disadvantage
+FrontalDis <-  with(
+  imp_final,
+  lmer(FrontalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         disadv_prenatal*trial +
+              (1 | id)
+  ))
+
+pool_FrontalDis <- pool(FrontalDis)
+summary(pool_FrontalDis, conf.int = TRUE)
+
+# Prenatal Depression
+FrontalPren <-  with(
+  imp_final,
+  lmer(FrontalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+          trial*Dep_int + trial*Dep_QSlope +
+              (1 | id)
+  ))
+
+pool_FrontalPren <- pool(FrontalPren)
+summary(pool_FrontalPren, conf.int = TRUE)
+
+# Prenatal Depression
+FrontalStress <-  with(
+  imp_final,
+  lmer(FrontalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         trial*stress_ave+
+         #ibq_neg_m + trial*ibq_neg_m*disadv_prenatal +
+              (1 | id)
+  ))
+
+pool_FrontalStress <- pool(FrontalStress)
+summary(pool_FrontalStress, conf.int = TRUE)
+
+# Prenatal Depression
+FrontalTemp <-  with(
+  imp_final,
+  lmer(FrontalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         trial*ibq_neg_m +
+              (1 | id)
+  ))
+
+pool_FrontalTemp <- pool(FrontalTemp)
+summary(pool_FrontalTemp, conf.int = TRUE)
+```
+
+### Central Models
+```{r}
+CentralT <- with(
+  imp_final,
+  lmer(CentralSync ~ 1 + trial +
+              (1 | id) 
+            ))
+
+pool_CentralT<- pool(CentralT)
+summary(pool_CentralT, conf.int = TRUE)
+
+# Covariates
+CentralCOV <- with(
+  imp_final,
+  lmer(CentralSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial +
+              (1 | id), 
+            ))
+
+pool_CentralCOV <- pool(CentralCOV)
+summary(pool_CentralCOV, conf.int = TRUE)
+
+# Prenatal Disadvantage
+CentralDis <-  with(
+  imp_final,
+  lmer(CentralSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         disadv_prenatal*trial +
+              (1 | id)
+  ))
+
+pool_CentralDis <- pool(CentralDis)
+summary(pool_CentralDis, conf.int = TRUE)
+
+# Depression
+CentralPren <- with(
+  imp_final,
+  lmer(CentralSync ~ 1 + 
+         child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         trial*Dep_int + 
+              (1 | id), 
+            ))
+
+pool_CentralPren <- pool(CentralPren)
+summary(pool_CentralPren, conf.int = TRUE)
+
+# Perceived Stress
+CentralStress <- with(
+  imp_final,
+  lmer(CentralSync ~ 1 + 
+         child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+        trial*Dep_int + trial*stress_ave +
+              (1 | id), 
+            ))
+
+pool_CentralStress <- pool(CentralStress)
+summary(pool_CentralStress, conf.int = TRUE)
+
+# IBQ negative affect
+CentralTemp <- with(
+  imp_final,
+  lmer(CentralSync ~ 1 + 
+         child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+        trial*Dep_int+ trial*ibq_neg_m +
+              (1 | id), 
+            ))
+
+pool_CentralTemp <- pool(CentralTemp)
+summary(pool_CentralTemp, conf.int = TRUE)
+```
+
+
+### Parietal Models
+```{r}
+PerT <- with(
+  imp_final,
+  lmer(ParietalSync ~ 1 + trial +
+              (1 | id)
+            ))
+
+pool_PerT<- pool(PerT)
+summary(pool_PerT, conf.int = TRUE)
+
+PerCOV <- with(
+  imp_final,
+  lmer(ParietalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial +
+              (1 | id), 
+            ))
+
+pool_PerCOV <- pool(PerCOV)
+summary(pool_PerCOV, conf.int = TRUE)
+
+# Prenatal Disadvantage
+ParDis <-  with(
+  imp_final,
+  lmer(ParietalSync ~ 1 + child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         disadv_prenatal*trial +
+              (1 | id)
+  ))
+
+pool_ParDis <- pool(ParDis)
+summary(pool_ParDis, conf.int = TRUE)
+
+# Depression
+ParPren <- with(
+  imp_final,
+  lmer(ParietalSync ~ 1 + 
+         child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         trial*Dep_int + 
+              (1 | id), 
+            ))
+
+pool_ParPren <- pool(ParPren)
+summary(pool_ParPren, conf.int = TRUE)
+
+# Perceived Stress
+ParStress <- with(
+  imp_final,
+  lmer(ParietalSync ~ 1 + 
+         child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         trial*stress_ave +
+              (1 | id), 
+            ))
+
+pool_ParStress <- pool(ParStress)
+summary(pool_ParStress, conf.int = TRUE)
+
+# IBQ negative affect
+ParTemp <- with(
+  imp_final,
+  lmer(ParietalSync ~ 1 + 
+         child_age_y1_assessment + child_sex + screen_delivery_ga_weeks + trial + 
+         trial*ibq_neg_m +
+              (1 | id), 
+            ))
+
+pool_ParTemp <- pool(ParTemp)
+summary(pool_ParTemp, conf.int = TRUE)
+```

@@ -1,0 +1,580 @@
+Mplus VERSION 8.9 (Mac)
+MUTHEN & MUTHEN
+01/25/2026   9:02 PM
+
+INPUT INSTRUCTIONS
+
+  TITLE: Multiple Imputation Model
+    DATA: FILE IS mplus_df.csv;
+    VARIABLE: NAMES = ga_w
+  birthW
+  childX	
+  age_risk
+  med_risk	
+  ageC1	
+  dep_1	
+  dep_2	
+  dep_3	
+  dep_4	
+  str_1	
+  str_2	
+  str_3	
+  str_4	
+  ibqN	
+  F_odd	
+  C_odd	
+  P_odd	
+  F_stdr	
+  C_stdr	
+  P_stdr	
+  F_after	
+  C_after	
+  P_after	
+  rwave
+  dis	
+  id;
+
+    USEVARIABLES = ga_w
+  birthW	
+  age_risk
+  med_risk	
+  ageC1	
+  dep_1	
+  dep_2	
+  dep_3	
+  dep_4	
+  str_1	
+  str_2	
+  str_3	
+  str_4	
+  ibqN	
+  F_odd	
+  C_odd	
+  P_odd	
+  F_stdr	
+  C_stdr	
+  P_stdr	
+  F_after	
+  C_after	
+  P_after	
+  dis;
+
+    AUXILIARY = id
+    ga_w
+    birthW	
+    age_risk
+    med_risk	
+    childX
+    rwave
+    dis;
+
+    MISSING = ALL(999);
+
+    DATA IMPUTATION:
+      IMPUTE = ageC1	
+  dep_1	
+  dep_2	
+  dep_3	
+  dep_4	
+  str_1	
+  str_2	
+  str_3	
+  str_4	
+  ibqN	
+  F_odd	
+  C_odd	
+  P_odd	
+  F_stdr	
+  C_stdr	
+  P_stdr	
+  F_after	
+  C_after	
+  P_after;
+
+      NDATASETS = 25;
+      SAVE = missimp*.dat;
+    ANALYSIS: TYPE = BASIC;
+    OUTPUT: TECH8;
+
+
+
+*** WARNING
+  Data set contains cases with missing on all variables.
+  These cases were not included in the analysis.
+  Number of cases with missing on all variables:  37
+   1 WARNING(S) FOUND IN THE INPUT INSTRUCTIONS
+
+
+
+Multiple Imputation Model
+
+SUMMARY OF ANALYSIS
+
+Number of groups                                                 1
+Average number of observations                                 362
+
+Number of replications
+    Requested                                                   25
+    Completed                                                   25
+
+Number of dependent variables                                   19
+Number of independent variables                                  0
+Number of continuous latent variables                            0
+
+Observed dependent variables
+
+  Continuous
+   AGEC1       DEP_1       DEP_2       DEP_3       DEP_4       STR_1
+   STR_2       STR_3       STR_4       IBQN        F_ODD       C_ODD
+   P_ODD       F_STDR      C_STDR      P_STDR      F_AFTER     C_AFTER
+   P_AFTER
+
+Observed auxiliary variables
+   ID          GA_W        BIRTHW      AGE_RISK    MED_RISK    CHILDX
+   RWAVE       DIS
+
+
+Variables used for imputation
+
+  Variables imputed as continuous
+   AGEC1       DEP_1       DEP_2       DEP_3       DEP_4       STR_1
+   STR_2       STR_3       STR_4       IBQN        F_ODD       C_ODD
+   P_ODD       F_STDR      C_STDR      P_STDR      F_AFTER     C_AFTER
+   P_AFTER
+
+
+Estimator                                                       ML
+Information matrix                                        OBSERVED
+Maximum number of iterations                                  1000
+Convergence criterion                                    0.500D-04
+Maximum number of steepest descent iterations                   20
+Maximum number of iterations for H1                           2000
+Convergence criterion for H1                             0.100D-03
+Specifications for Bayesian Estimation
+  Point estimate                                            MEDIAN
+  Number of Markov chain Monte Carlo (MCMC) chains               2
+  Random seed for the first chain                                0
+  Starting value information                           UNPERTURBED
+  Algorithm used for Markov chain Monte Carlo           GIBBS(PX1)
+  Convergence criterion                                  0.500D-01
+  Maximum number of iterations                               50000
+  K-th iteration used for thinning                               1
+Specifications for Data Imputation
+  Number of imputed data sets                                   25
+  H1 imputation model type                              COVARIANCE
+  Iteration intervals for thinning                             100
+
+Input data file(s)
+  mplus_df.csv
+
+Input data format  FREE
+
+
+SUMMARY OF DATA FOR THE FIRST DATA SET
+
+     Number of missing data patterns             1
+
+
+SUMMARY OF MISSING DATA PATTERNS FOR THE FIRST DATA SET
+
+
+     MISSING DATA PATTERNS (x = not missing)
+
+           1
+ AGEC1     x
+ DEP_1     x
+ DEP_2     x
+ DEP_3     x
+ DEP_4     x
+ STR_1     x
+ STR_2     x
+ STR_3     x
+ STR_4     x
+ IBQN      x
+ F_ODD     x
+ C_ODD     x
+ P_ODD     x
+ F_STDR    x
+ C_STDR    x
+ P_STDR    x
+ F_AFTER   x
+ C_AFTER   x
+ P_AFTER   x
+
+
+     MISSING DATA PATTERN FREQUENCIES
+
+    Pattern   Frequency
+          1         362
+
+
+COVARIANCE COVERAGE OF DATA FOR THE FIRST DATA SET
+
+Minimum covariance coverage value   0.100
+
+
+     PROPORTION OF DATA PRESENT
+
+
+           Covariance Coverage
+              AGEC1         DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________      ________
+ AGEC1          1.000
+ DEP_1          1.000         1.000
+ DEP_2          1.000         1.000         1.000
+ DEP_3          1.000         1.000         1.000         1.000
+ DEP_4          1.000         1.000         1.000         1.000         1.000
+ STR_1          1.000         1.000         1.000         1.000         1.000
+ STR_2          1.000         1.000         1.000         1.000         1.000
+ STR_3          1.000         1.000         1.000         1.000         1.000
+ STR_4          1.000         1.000         1.000         1.000         1.000
+ IBQN           1.000         1.000         1.000         1.000         1.000
+ F_ODD          1.000         1.000         1.000         1.000         1.000
+ C_ODD          1.000         1.000         1.000         1.000         1.000
+ P_ODD          1.000         1.000         1.000         1.000         1.000
+ F_STDR         1.000         1.000         1.000         1.000         1.000
+ C_STDR         1.000         1.000         1.000         1.000         1.000
+ P_STDR         1.000         1.000         1.000         1.000         1.000
+ F_AFTER        1.000         1.000         1.000         1.000         1.000
+ C_AFTER        1.000         1.000         1.000         1.000         1.000
+ P_AFTER        1.000         1.000         1.000         1.000         1.000
+
+
+           Covariance Coverage
+              STR_1         STR_2         STR_3         STR_4         IBQN
+              ________      ________      ________      ________      ________
+ STR_1          1.000
+ STR_2          1.000         1.000
+ STR_3          1.000         1.000         1.000
+ STR_4          1.000         1.000         1.000         1.000
+ IBQN           1.000         1.000         1.000         1.000         1.000
+ F_ODD          1.000         1.000         1.000         1.000         1.000
+ C_ODD          1.000         1.000         1.000         1.000         1.000
+ P_ODD          1.000         1.000         1.000         1.000         1.000
+ F_STDR         1.000         1.000         1.000         1.000         1.000
+ C_STDR         1.000         1.000         1.000         1.000         1.000
+ P_STDR         1.000         1.000         1.000         1.000         1.000
+ F_AFTER        1.000         1.000         1.000         1.000         1.000
+ C_AFTER        1.000         1.000         1.000         1.000         1.000
+ P_AFTER        1.000         1.000         1.000         1.000         1.000
+
+
+           Covariance Coverage
+              F_ODD         C_ODD         P_ODD         F_STDR        C_STDR
+              ________      ________      ________      ________      ________
+ F_ODD          1.000
+ C_ODD          1.000         1.000
+ P_ODD          1.000         1.000         1.000
+ F_STDR         1.000         1.000         1.000         1.000
+ C_STDR         1.000         1.000         1.000         1.000         1.000
+ P_STDR         1.000         1.000         1.000         1.000         1.000
+ F_AFTER        1.000         1.000         1.000         1.000         1.000
+ C_AFTER        1.000         1.000         1.000         1.000         1.000
+ P_AFTER        1.000         1.000         1.000         1.000         1.000
+
+
+           Covariance Coverage
+              P_STDR        F_AFTER       C_AFTER       P_AFTER
+              ________      ________      ________      ________
+ P_STDR         1.000
+ F_AFTER        1.000         1.000
+ C_AFTER        1.000         1.000         1.000
+ P_AFTER        1.000         1.000         1.000         1.000
+
+
+
+RESULTS FOR BASIC ANALYSIS
+
+NOTE:  These are average results over 25 data sets.
+
+
+     ESTIMATED SAMPLE STATISTICS
+
+
+           Means
+              AGEC1         DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________      ________
+                1.102         4.969         4.645         4.491         5.984
+
+
+           Means
+              STR_1         STR_2         STR_3         STR_4         IBQN
+              ________      ________      ________      ________      ________
+               13.306        13.623        13.096        13.249         3.370
+
+
+           Means
+              F_ODD         C_ODD         P_ODD         F_STDR        C_STDR
+              ________      ________      ________      ________      ________
+                0.081         0.038         0.064         0.100         0.057
+
+
+           Means
+              P_STDR        F_AFTER       C_AFTER       P_AFTER
+              ________      ________      ________      ________
+                0.062         0.101         0.054         0.059
+
+
+           Covariances
+              AGEC1         DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________      ________
+ AGEC1          0.035
+ DEP_1         -0.027        21.746
+ DEP_2         -0.010        13.020        22.451
+ DEP_3          0.091        13.643        14.596        24.608
+ DEP_4          0.074        10.602        11.170        13.113        25.707
+ STR_1         -0.144        22.169        17.169        16.049        14.227
+ STR_2          0.102        18.193        25.201        19.684        19.384
+ STR_3          0.012        14.743        17.779        23.327        17.336
+ STR_4          0.060        13.679        13.740        15.950        27.862
+ IBQN          -0.001         0.923         0.960         0.631         1.102
+ F_ODD         -0.002        -0.047         0.005         0.021         0.002
+ C_ODD         -0.005        -0.049        -0.091        -0.099        -0.025
+ P_ODD         -0.002        -0.012        -0.003         0.000        -0.006
+ F_STDR        -0.004        -0.012         0.044         0.009         0.052
+ C_STDR        -0.003         0.001         0.030         0.000         0.064
+ P_STDR        -0.003         0.043         0.010        -0.002         0.029
+ F_AFTER       -0.001         0.026         0.092         0.131         0.047
+ C_AFTER       -0.002         0.008        -0.057        -0.033         0.003
+ P_AFTER       -0.002         0.030         0.012        -0.016         0.004
+
+
+           Covariances
+              STR_1         STR_2         STR_3         STR_4         IBQN
+              ________      ________      ________      ________      ________
+ STR_1         51.697
+ STR_2         35.164        60.122
+ STR_3         29.283        37.670        56.296
+ STR_4         25.295        29.574        26.371        50.465
+ IBQN           1.422         1.420         1.463         1.930         0.526
+ F_ODD         -0.031        -0.024         0.049        -0.008        -0.013
+ C_ODD          0.068        -0.027        -0.009        -0.055         0.010
+ P_ODD          0.040        -0.012         0.012         0.001        -0.001
+ F_STDR         0.044        -0.004        -0.010         0.063         0.002
+ C_STDR         0.037         0.049         0.009         0.046         0.013
+ P_STDR         0.095         0.041         0.031         0.105         0.007
+ F_AFTER        0.034         0.068         0.118         0.040         0.005
+ C_AFTER        0.057        -0.062        -0.011        -0.029         0.013
+ P_AFTER        0.036        -0.017        -0.062         0.035         0.009
+
+
+           Covariances
+              F_ODD         C_ODD         P_ODD         F_STDR        C_STDR
+              ________      ________      ________      ________      ________
+ F_ODD          0.009
+ C_ODD          0.002         0.013
+ P_ODD          0.002         0.003         0.010
+ F_STDR         0.005         0.002         0.002         0.007
+ C_STDR         0.001         0.007         0.001         0.001         0.007
+ P_STDR         0.000         0.002         0.006         0.002         0.001
+ F_AFTER        0.007         0.003         0.001         0.005         0.003
+ C_AFTER        0.002         0.010         0.002         0.001         0.007
+ P_AFTER        0.000         0.003         0.006         0.002         0.001
+
+
+           Covariances
+              P_STDR        F_AFTER       C_AFTER       P_AFTER
+              ________      ________      ________      ________
+ P_STDR         0.008
+ F_AFTER        0.000         0.011
+ C_AFTER        0.002         0.004         0.013
+ P_AFTER        0.005         0.001         0.003         0.009
+
+
+           Correlations
+              AGEC1         DEP_1         DEP_2         DEP_3         DEP_4
+              ________      ________      ________      ________      ________
+ AGEC1          1.000
+ DEP_1         -0.030         1.000
+ DEP_2         -0.011         0.589         1.000
+ DEP_3          0.098         0.590         0.621         1.000
+ DEP_4          0.078         0.448         0.465         0.521         1.000
+ STR_1         -0.107         0.661         0.504         0.450         0.390
+ STR_2          0.070         0.503         0.686         0.512         0.493
+ STR_3          0.008         0.421         0.500         0.627         0.456
+ STR_4          0.045         0.413         0.408         0.453         0.774
+ IBQN          -0.006         0.273         0.279         0.175         0.300
+ F_ODD         -0.101        -0.105         0.012         0.045         0.004
+ C_ODD         -0.229        -0.090        -0.165        -0.171        -0.042
+ P_ODD         -0.123        -0.027        -0.007        -0.001        -0.013
+ F_STDR        -0.252        -0.031         0.111         0.021         0.122
+ C_STDR        -0.162         0.001         0.074         0.001         0.148
+ P_STDR        -0.199         0.102         0.024        -0.004         0.064
+ F_AFTER       -0.046         0.053         0.183         0.249         0.088
+ C_AFTER       -0.090         0.014        -0.106        -0.058         0.005
+ P_AFTER       -0.088         0.069         0.027        -0.034         0.008
+
+
+           Correlations
+              STR_1         STR_2         STR_3         STR_4         IBQN
+              ________      ________      ________      ________      ________
+ STR_1          1.000
+ STR_2          0.631         1.000
+ STR_3          0.543         0.648         1.000
+ STR_4          0.495         0.537         0.495         1.000
+ IBQN           0.273         0.252         0.269         0.375         1.000
+ F_ODD         -0.045        -0.033         0.068        -0.011        -0.189
+ C_ODD          0.081        -0.030        -0.010        -0.066         0.120
+ P_ODD          0.058        -0.016         0.017         0.002        -0.010
+ F_STDR         0.074        -0.006        -0.015         0.105         0.029
+ C_STDR         0.061         0.074         0.014         0.077         0.216
+ P_STDR         0.148         0.059         0.046         0.164         0.103
+ F_AFTER        0.045         0.082         0.148         0.053         0.064
+ C_AFTER        0.070        -0.071        -0.013        -0.036         0.156
+ P_AFTER        0.054        -0.023        -0.088         0.053         0.134
+
+
+           Correlations
+              F_ODD         C_ODD         P_ODD         F_STDR        C_STDR
+              ________      ________      ________      ________      ________
+ F_ODD          1.000
+ C_ODD          0.195         1.000
+ P_ODD          0.165         0.263         1.000
+ F_STDR         0.625         0.187         0.272         1.000
+ C_STDR         0.173         0.717         0.117         0.164         1.000
+ P_STDR         0.030         0.198         0.681         0.324         0.165
+ F_AFTER        0.707         0.272         0.143         0.539         0.317
+ C_AFTER        0.182         0.777         0.205         0.130         0.767
+ P_AFTER        0.039         0.261         0.631         0.207         0.134
+
+
+           Correlations
+              P_STDR        F_AFTER       C_AFTER       P_AFTER
+              ________      ________      ________      ________
+ P_STDR         1.000
+ F_AFTER        0.000         1.000
+ C_AFTER        0.237         0.303         1.000
+ P_AFTER        0.593         0.066         0.297         1.000
+
+
+UNIVARIATE SAMPLE STATISTICS
+
+
+     UNIVARIATE HIGHER-ORDER MOMENT DESCRIPTIVE STATISTICS
+
+         Variable/         Mean/     Skewness/   Minimum/ % with                Percentiles
+        Sample Size      Variance    Kurtosis    Maximum  Min/Max      20%/60%    40%/80%    Median
+
+     AGEC1                 1.102       1.760       0.910    0.42%       0.980      1.020      1.040
+             238.000       0.035       2.233       1.760    0.42%       1.060      1.160
+     DEP_1                 4.943       1.367       0.000   16.77%       1.000      3.000      4.000
+             316.000      21.718       2.148      25.000    0.32%       5.000      8.000
+     DEP_2                 4.646       1.447       0.000   20.90%       0.000      2.000      4.000
+             268.000      22.557       2.330      26.000    0.37%       5.000      8.000
+     DEP_3                 4.241       1.882       0.000   20.74%       0.000      2.000      3.000
+             270.000      22.442       4.118      25.000    0.37%       4.000      7.000
+     DEP_4                 5.864       1.099       0.000   12.81%       1.000      4.000      4.000
+             242.000      25.390       1.036      25.000    0.41%       6.000      9.000
+     STR_1                13.264       0.386       0.000    1.91%       7.000     11.000     12.000
+             314.000      51.761      -0.465      35.000    0.32%      15.000     20.000
+     STR_2                13.280       0.493       0.000    0.41%       6.000     10.000     13.000
+             246.000      58.820      -0.218      38.000    0.41%      16.000     20.000
+     STR_3                12.765       0.526       0.000    1.52%       6.000     10.000     12.000
+             264.000      52.816       0.116      37.000    0.38%      15.000     18.000
+     STR_4                12.967       0.276       0.000    2.87%       6.000     11.000     12.500
+             244.000      49.966      -0.371      31.000    0.41%      15.000     18.000
+     IBQN                  3.364       0.607       1.816    0.45%       2.715      3.151      3.271
+             224.000       0.524       0.707       6.067    0.45%       3.474      3.890
+     F_ODD                 0.079       0.251      -0.158    1.01%      -0.008      0.059      0.077
+              99.000       0.009       0.003       0.313    1.01%       0.100      0.141
+     C_ODD                 0.044       0.476      -0.191    1.01%      -0.061      0.026      0.055
+              99.000       0.014       1.883       0.534    1.01%       0.078      0.138
+     P_ODD                 0.067       0.237      -0.189    1.01%      -0.008      0.036      0.062
+              99.000       0.009       0.304       0.339    1.01%       0.087      0.135
+     F_STDR                0.103       0.699      -0.104    1.01%       0.040      0.070      0.095
+              99.000       0.007       1.484       0.393    1.01%       0.109      0.169
+     C_STDR                0.058       2.014      -0.095    1.01%      -0.008      0.025      0.054
+              99.000       0.007       8.632       0.531    1.01%       0.067      0.111
+     P_STDR                0.070       0.338      -0.161    1.01%      -0.010      0.049      0.069
+              99.000       0.008       0.575       0.369    1.01%       0.099      0.141
+     F_AFTER               0.098       0.428      -0.143    1.01%       0.020      0.064      0.090
+              99.000       0.011       0.108       0.397    1.01%       0.103      0.180
+     C_AFTER               0.060       0.971      -0.170    1.01%      -0.034      0.024      0.058
+              99.000       0.013       3.235       0.597    1.01%       0.091      0.136
+     P_AFTER               0.065       0.149      -0.220    1.01%       0.005      0.041      0.052
+              99.000       0.008       0.768       0.321    1.01%       0.080      0.145
+
+
+TECHNICAL 8 OUTPUT
+
+
+   TECHNICAL 8 OUTPUT FOR BAYES ESTIMATION
+
+     CHAIN    BSEED
+     1        0
+     2        285380
+
+                     POTENTIAL       PARAMETER WITH
+     ITERATION    SCALE REDUCTION      HIGHEST PSR
+     100              2.184               101
+     200              1.843               176
+     300              1.584               169
+     400              1.493               177
+     500              1.529               177
+     600              1.444               177
+     700              1.609               176
+     800              1.581               176
+     900              1.315               175
+     1000             1.167               175
+     1100             1.091               181
+
+
+SAVEDATA INFORMATION
+
+
+  Save file
+    missimp*.dat
+
+  Order of variables
+
+    AGEC1
+    DEP_1
+    DEP_2
+    DEP_3
+    DEP_4
+    STR_1
+    STR_2
+    STR_3
+    STR_4
+    IBQN
+    F_ODD
+    C_ODD
+    P_ODD
+    F_STDR
+    C_STDR
+    P_STDR
+    F_AFTER
+    C_AFTER
+    P_AFTER
+    ID
+    GA_W
+    BIRTHW
+    AGE_RISK
+    MED_RISK
+    CHILDX
+    RWAVE
+    DIS
+
+  Save file format           Free
+
+  Save file record length    10000
+
+  Save missing symbol        *
+
+
+     Beginning Time:  21:02:09
+        Ending Time:  21:02:12
+       Elapsed Time:  00:00:03
+
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2023 Muthen & Muthen

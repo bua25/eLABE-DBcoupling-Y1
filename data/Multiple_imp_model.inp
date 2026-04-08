@@ -1,0 +1,91 @@
+TITLE: Multiple Imputation Model
+  DATA: FILE IS mplus_df.csv;
+  VARIABLE: NAMES = ga_w
+birthW
+childX	
+age_risk
+med_risk	
+ageC1	
+dep_1	
+dep_2	
+dep_3	
+dep_4	
+str_1	
+str_2	
+str_3	
+str_4	
+ibqN	
+F_odd	
+C_odd	
+P_odd	
+F_stdr	
+C_stdr	
+P_stdr	
+F_after	
+C_after	
+P_after	
+rwave
+dis	
+id;
+
+  USEVARIABLES = ga_w
+birthW	
+age_risk
+med_risk	
+ageC1	
+dep_1	
+dep_2	
+dep_3	
+dep_4	
+str_1	
+str_2	
+str_3	
+str_4	
+ibqN	
+F_odd	
+C_odd	
+P_odd	
+F_stdr	
+C_stdr	
+P_stdr	
+F_after	
+C_after	
+P_after	
+dis;
+
+  AUXILIARY = id
+  ga_w
+  birthW	
+  age_risk
+  med_risk	
+  childX
+  rwave
+  dis;
+
+  MISSING = ALL(999);
+
+  DATA IMPUTATION:
+    IMPUTE = ageC1	
+dep_1	
+dep_2	
+dep_3	
+dep_4	
+str_1	
+str_2	
+str_3	
+str_4	
+ibqN	
+F_odd	
+C_odd	
+P_odd	
+F_stdr	
+C_stdr	
+P_stdr	
+F_after	
+C_after	
+P_after;
+
+    NDATASETS = 25;
+    SAVE = missimp*.dat;
+  ANALYSIS: TYPE = BASIC;
+  OUTPUT: TECH8;
